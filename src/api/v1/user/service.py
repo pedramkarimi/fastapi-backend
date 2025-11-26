@@ -1,5 +1,5 @@
 class UserService:
-    def fetch_all_users():
+    def fetch_all_users(self):
         users = [
             {
                 "id" : 1,
