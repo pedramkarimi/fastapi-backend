@@ -21,7 +21,7 @@ class UserCreate(BaseModel):
     last_name : str
 
 
-def to_user_read(user: models.User) -> UserResponse:
+def to_user_response(user: models.User) -> UserResponse:
     return UserResponse(
         id=user.id,
         email=user.email,

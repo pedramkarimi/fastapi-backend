@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.db.session import get_db
-from .schemas import UserCreate, UserResponse, to_user_read 
+from .schemas import UserCreate, UserResponse, to_user_response 
 from .repository import UserRepository
 from src.core.security import Security
 from src.core.errors import ErrorMessages
@@ -25,13 +25,12 @@ class UserService:
 
         user = self.user_repo.create(user=user, password_hash=password_hash)
 
-        # return UserRead.model_validate(user)
-        return to_user_read(user)
+        return to_user_response(user)
 
     def users(self, skip: int, limit: int) -> list[UserResponse]:
         users = self.user_repo.users(skip=skip, limit=limit)
-        # return [UserRead.model_validate(u) for u in users]
-        return [to_user_read(u) for u in users]
+
+        return [to_user_response(u) for u in users]
     
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
