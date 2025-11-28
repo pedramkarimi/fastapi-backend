@@ -39,3 +39,12 @@ urllib3==2.5.0
 uvicorn==0.38.0
 watchfiles==1.1.1
 websockets==15.0.1
+# db
+SQLAlchemy>=2.0
+psycopg2-binary
+pydantic-settings
+python-dotenv 
+alembic
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+

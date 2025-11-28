@@ -1,34 +1,45 @@
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, EmailStr
+from src.api.v1.user import models
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 app = FastAPI()
 
-class Fullname(BaseModel):
-    name : str = Field(alias="first_name")
-    family : str = Field(alias="last_name")
-
-    model_config = {
-        "populate_by_name": True
-    }
 
 class UsersResponse(BaseModel):
     id : int
-    username : str
-    fullname : Fullname
-    tags : list[str] = Field(alias="labels")
+    email : str
+    # fullname : Fullname
+
 
     model_config = {
         "populate_by_name": True,
-        "alias_generator": None
+        "alias_generator": None,
+        # "from_attributes" = True  # برای تبدیل خودکار از ORM (SQLAlchemy) به Pydantic
     }
 
 
+class UserRead(BaseModel):
+    id: int
+    email: EmailStr
+    first_name: str
+    last_name: str
+    is_active: bool
+
 
 class UserCreate(BaseModel):
-    id  :int
-    username : str = Field(..., min_length = 3, max_length = 10, description = "username must be between 3 to 10 character.")
-    fullname : str 
-    tags : list[str]
+    email : EmailStr = Field(..., min_length = 3, max_length = 20)
+    password : str = Field(..., min_length = 3)
+    first_name : str 
+    last_name : str
+
+
+def to_user_read(user: models.User) -> UserRead:
+    return UserRead(
+        id=user.id,
+        email=user.email,
+        first_name=user.name,
+        last_name=user.family,
+        is_active=user.is_active,
+    )
