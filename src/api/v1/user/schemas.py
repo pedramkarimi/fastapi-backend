@@ -6,21 +6,7 @@ from fastapi.exceptions import RequestValidationError
 
 app = FastAPI()
 
-
-class UsersResponse(BaseModel):
-    id : int
-    email : str
-    # fullname : Fullname
-
-
-    model_config = {
-        "populate_by_name": True,
-        "alias_generator": None,
-        # "from_attributes" = True  # برای تبدیل خودکار از ORM (SQLAlchemy) به Pydantic
-    }
-
-
-class UserRead(BaseModel):
+class UserResponse(BaseModel):
     id: int
     email: EmailStr
     first_name: str
@@ -35,8 +21,8 @@ class UserCreate(BaseModel):
     last_name : str
 
 
-def to_user_read(user: models.User) -> UserRead:
-    return UserRead(
+def to_user_read(user: models.User) -> UserResponse:
+    return UserResponse(
         id=user.id,
         email=user.email,
         first_name=user.name,

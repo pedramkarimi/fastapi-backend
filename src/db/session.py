@@ -7,7 +7,7 @@ from src.core.config import settings
 engine = create_engine(
     settings.SQLALCHEMY_DATABASE_URL,
     future=True,
-    echo=True,  # فعلاً بذار روشن باشه تا کوئری‌ها رو در لاگ ببینی (بعداً می‌تونی خاموش کنی)
+    echo=False    # show sql queries in logs
 )
 
 # SessionLocal

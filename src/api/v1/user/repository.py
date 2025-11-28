@@ -1,6 +1,4 @@
-# src/api/v1/user/repository.py
 from typing import Optional, List
-
 from sqlalchemy.orm import Session
 from . import models
 from .schemas import UserCreate
@@ -16,7 +14,7 @@ class UserRepository:
     def get_user_by_email(self, email: str) -> Optional[models.User]:
         return self.db.query(models.User).filter(models.User.email == email).first()
 
-    def users(self, skip: int = 0, limit: int = 100) -> List[models.User]:
+    def users(self, skip: int, limit: int) -> List[models.User]:
         return (
             self.db.query(models.User)
             .order_by(models.User.id)

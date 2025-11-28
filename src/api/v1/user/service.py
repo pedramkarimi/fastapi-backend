@@ -1,44 +1,38 @@
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from fastapi import Depends
 from src.db.session import get_db
-from . import models
-from .schemas import UserCreate, UsersResponse, UserRead, to_user_read 
-
-
-
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
+from .schemas import UserCreate, UserResponse, to_user_read 
 from .repository import UserRepository
-from src.core.security import hash_password
+from src.core.security import Security
+from src.core.errors import ErrorMessages
 
 
 class UserService:
-    @staticmethod
-    def create_user(db: Session, user: UserCreate) -> UserRead:
-        repo = UserRepository(db)
+    def __init__(self, db: Session):
+        self.user_repo = UserRepository(db)
 
-        # 1) ایمیل تکراری نباشه
-        existing = repo.get_user_by_email(user.email)
-        if existing:
+
+    def create_user(self, user: UserCreate) -> UserResponse:
+
+        email_existing = self.user_repo.get_user_by_email(user.email)
+        if email_existing:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User with this email already exists.",
+                status_code= status.HTTP_400_BAD_REQUEST,
+                detail=ErrorMessages.USER_EMAIL_EXISTS,
             )
 
-        # 2) hash کردن پسورد
-        password_hash = hash_password(user.password)
+        password_hash = Security.hash_password(user.password)
 
-        # 3) ساخت user در دیتابیس
-        user = repo.create(user=user, password_hash=password_hash)
+        user = self.user_repo.create(user=user, password_hash=password_hash)
 
-        # 4) تبدیل به schema خروجی
         # return UserRead.model_validate(user)
         return to_user_read(user)
 
-    @staticmethod
-    def users(db: Session, skip: int = 0, limit: int = 100) -> list[UserRead]:
-        repo = UserRepository(db)
-        users = repo.users(skip=skip, limit=limit)
+    def users(self, skip: int, limit: int) -> list[UserResponse]:
+        users = self.user_repo.users(skip=skip, limit=limit)
         # return [UserRead.model_validate(u) for u in users]
         return [to_user_read(u) for u in users]
+    
+
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+        return UserService(db)
