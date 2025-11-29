@@ -27,14 +27,13 @@ class UserService:
         user = self.user_repo.user_create(user=user, password_hash=password_hash)
 
         user_response = to_user_response(user)
-        return BaseResponse[UserResponse](success = True, data = user_response)
+        return BaseResponse[UserResponse](success=True, data=user_response)
 
     def users_list(self, skip: int, limit: int) -> list[UserResponse]:
         users = self.user_repo.users_list(skip=skip, limit=limit)
         total = self.user_repo.users_count()
         items = [to_user_response(u) for u in users]
-        return PaginationResponse[UserResponse](total = total, items = items)
-
+        return PaginationResponse[UserResponse](total=total, items=items)
 
     def user_update(self, user_id: int, user: dict) -> BaseResponse[UserResponse]:
         if (user.password is None and user.first_name is None and user.last_name is None):
@@ -72,7 +71,34 @@ class UserService:
         updated_user = self.user_repo.user_update(db_user=db_user, fields=user_update_data)
 
         user_response = to_user_response(updated_user)
-        return BaseResponse[UserResponse](success = True, data = user_response)
+        return BaseResponse[UserResponse](success=True, data=user_response)
+
+    def user_delete(self, user_id: int) -> BaseResponse[bool]:
+        db_user = self.user_repo.get_user_by_id(user_id=user_id)
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorMessages.USER_NOT_FOUND
+            )
+        
+        deleted_user = self.user_repo.user_delete(db_user)
+        print(deleted_user)
+        return BaseResponse[bool](
+            success=True,
+            data=True,
+    )
+
+    def get_user_by_id(self, user_id: int):
+        db_user = self.user_repo.get_user_by_id(user_id=user_id)
+        if db_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorMessages.USER_NOT_FOUND
+            )
+        
+        user = to_user_response(db_user)
+        return BaseResponse[UserResponse](success=True, data=user)
+
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
         return UserService(db)
