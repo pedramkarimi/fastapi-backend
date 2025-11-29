@@ -1,10 +1,11 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.db.session import get_db
-from .schemas import UserCreate, UserResponse, to_user_response 
+from .schemas import UserCreate, UserResponse, to_user_response, UserUpdate
 from .repository import UserRepository
 from src.core.security import Security
 from src.core.errors import ErrorMessages
+from src.core.response import PaginationResponse, BaseResponse
 
 
 class UserService:
@@ -12,7 +13,7 @@ class UserService:
         self.user_repo = UserRepository(db)
 
 
-    def create_user(self, user: UserCreate) -> UserResponse:
+    def user_create(self, user: UserCreate) -> UserResponse:
 
         email_existing = self.user_repo.get_user_by_email(user.email)
         if email_existing:
@@ -23,15 +24,55 @@ class UserService:
 
         password_hash = Security.hash_password(user.password)
 
-        user = self.user_repo.create(user=user, password_hash=password_hash)
+        user = self.user_repo.user_create(user=user, password_hash=password_hash)
 
-        return to_user_response(user)
+        user_response = to_user_response(user)
+        return BaseResponse[UserResponse](success = True, data = user_response)
 
-    def users(self, skip: int, limit: int) -> list[UserResponse]:
-        users = self.user_repo.users(skip=skip, limit=limit)
+    def users_list(self, skip: int, limit: int) -> list[UserResponse]:
+        users = self.user_repo.users_list(skip=skip, limit=limit)
+        total = self.user_repo.users_count()
+        items = [to_user_response(u) for u in users]
+        return PaginationResponse[UserResponse](total = total, items = items)
 
-        return [to_user_response(u) for u in users]
-    
+
+    def user_update(self, user_id: int, user: dict) -> BaseResponse[UserResponse]:
+        if (user.password is None and user.first_name is None and user.last_name is None):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorMessages.NO_CHANGES_DETECTED,
+            )
+
+        db_user = self.user_repo.get_user_by_id(user_id)
+        if db_user is None:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail=ErrorMessages.USER_NOT_FOUND,
+            )
+        
+        user_new_data = UserUpdate()
+
+        if user.password is not None:
+            password_is_verified = Security.verify_password(user.password, db_user.password)
+            if not password_is_verified:
+                user_new_data.password = Security.hash_password(user.password)
+            
+        if user.first_name is not None and user.first_name != db_user.name:
+            user_new_data.first_name = user.first_name
+
+        if user.last_name is not None and user.last_name != db_user.family:
+            user_new_data.last_name = user.last_name
+        
+        if not user_new_data.model_dump(exclude_none=True):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorMessages.NO_CHANGES_DETECTED,
+            )
+        user_update_data = user_new_data.model_dump(exclude_none=True)
+        updated_user = self.user_repo.user_update(db_user=db_user, fields=user_update_data)
+
+        user_response = to_user_response(updated_user)
+        return BaseResponse[UserResponse](success = True, data = user_response)
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
         return UserService(db)
