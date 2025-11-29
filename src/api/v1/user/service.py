@@ -1,11 +1,12 @@
 from fastapi import Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from src.db.session import get_db
+from sqlalchemy.orm import Session
 from .schemas import UserCreate, UserResponse, to_user_response, UserUpdate
 from .repository import UserRepository
 from src.core.security import Security
 from src.core.errors import ErrorMessages
 from src.core.response import PaginationResponse, BaseResponse
+
 
 
 class UserService:
