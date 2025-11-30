@@ -3,3 +3,4 @@ class AuthPaths:
     TAGS = ["auth"]
     LOGIN = "/login"
     REGISTER = "/register"
+    ME = "/me"

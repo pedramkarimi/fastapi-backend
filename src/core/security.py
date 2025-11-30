@@ -31,7 +31,7 @@ class Security:
 
     def decode_access_token(token: str) -> dict[str, Any]:
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
             return payload
         except JWTError:
             raise HTTPException(
