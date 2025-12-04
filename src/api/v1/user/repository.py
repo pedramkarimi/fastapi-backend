@@ -4,6 +4,10 @@ from . import models
 from .schemas import UserCreate
 from sqlalchemy import select, func
 
+from sqlalchemy.exc import IntegrityError
+from src.core.exceptions import ConflictException
+from src.core.errors import ErrorMessages
+
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -37,7 +41,12 @@ class UserRepository:
             family=user.last_name,
         )
         self.db.add(db_user)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+            raise ConflictException(ErrorMessages.USER_EMAIL_EXISTS)
+        
         self.db.refresh(db_user)
         return db_user
 
@@ -52,10 +61,20 @@ class UserRepository:
             db_user.family = fields["last_name"]
             
         self.db.add(db_user)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+            raise 
+
         self.db.refresh(db_user)
         return db_user
     
     def user_delete(self, user: models.User):
         self.db.delete(user)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+        
+        raise

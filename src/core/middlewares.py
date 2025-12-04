@@ -14,6 +14,8 @@ from .handlers import (
     generic_exception_handler,
 )
 from .log_models import RequestLog
+from sqlalchemy.exc import SQLAlchemyError
+
 
 logger = logging.getLogger("app.request")
 
@@ -40,7 +42,6 @@ async def logging_middleware(request: Request, call_next: Callable) -> Response:
         status_code = exc.status_code
         error_code = exc.code
         error_message = exc.message
-
         # response رو هم با همون handler استاندارد بسازیم:
         response = await app_exception_handler(request, exc)
 
@@ -48,14 +49,17 @@ async def logging_middleware(request: Request, call_next: Callable) -> Response:
         status_code = exc.status_code
         error_code = None
         error_message = str(exc.detail)
-
         response = await http_exception_handler(request, exc)
 
     except Exception as exc:
         status_code = 500
-        error_code = None
-        error_message = "Unhandled exception"
+        if isinstance(exc, SQLAlchemyError):
+            error_code = "DB_ERROR"
+        else:
+            error_code = None
 
+        error_message = f"{exc.__class__.__name__}: {exc}"
+        error_code = None
         response = await generic_exception_handler(request, exc)
 
     duration_ms = (time.perf_counter() - start_time) * 1000
