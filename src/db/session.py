@@ -6,6 +6,9 @@ from src.core.config import settings
 # Engine
 engine = create_engine(
     settings.SQLALCHEMY_DATABASE_URL,
+    pool_size=5,
+    max_overflow=10,
+    pool_pre_ping=True,
     future=True,
     echo=False    # show sql queries in logs
 )
@@ -17,7 +20,6 @@ SessionLocal = sessionmaker(
     bind=engine,
 )
 
-# dependency برای FastAPI
 def get_db():
     db = SessionLocal()
     try:

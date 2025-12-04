@@ -1,90 +1,102 @@
-from fastapi import Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from typing import Any, Dict, Optional
+from fastapi import status
 
 
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    formatted_errors = []
+class AppException(Exception):
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int = status.HTTP_400_BAD_REQUEST,
+        code: Optional[str] = None,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        self.message = message
+        self.status_code = status_code
+        self.code = code
+        self.extra = extra or {}
 
-    for error in exc.errors():
-        formatted_errors.append(format_pydantic_error(error))
-
-    return JSONResponse(
-        status_code=422,
-        content={
-            "detail": formatted_errors,
-            "message": "Validation failed. Check the 'detail' field for more info.",
-        },
-    )
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "message": self.message,
+            "status_code": self.status_code,
+            "code": self.code,
+            "extra": self.extra,
+        }
 
 
-def format_pydantic_error(error: dict):
-    loc = ".".join(map(str, error.get("loc", [])[1:])) if error.get("loc") else ""
-    err_type = error.get("type", "")
-    msg = error.get("msg", "")
-    ctx = error.get("ctx", {})
+# --------- Auth Exceptions ---------
 
-    result = {
-        "field": loc,
-        "error_type": err_type,
-        "message": msg,
-        "expected": ctx.get("expected"),
-        "context": ctx,
-    }
+class InvalidCredentialsException(AppException):
+    def __init__(self, message: str = "Invalid credentials") -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            code="AUTH_INVALID_CREDENTIALS",
+        )
 
-    # ---- انواع خطاهای Pydantic ----
 
-    if err_type == "missing":
-        result["message"] = "این فیلد اجباری است و ارسال نشده."
-        return result
+class TokenExpiredException(AppException):
+    def __init__(self, message: str = "Token has expired") -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            code="AUTH_TOKEN_EXPIRED",
+        )
 
-    if err_type.startswith("type_error") or "value is not a valid" in msg:
-        expected_type = ctx.get("expected")
-        result["message"] = f"نوع مقدار اشتباه است. نوع صحیح: {expected_type}"
-        return result
 
-    if err_type == "string_too_short":
-        result["message"] = f"حداقل طول رشته: {ctx.get('min_length')}"
-        return result
+class TokenInvalidException(AppException):
+    def __init__(self, message: str = "Token is invalid") -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            code="AUTH_TOKEN_INVALID",
+        )
 
-    if err_type == "string_too_long":
-        result["message"] = f"حداکثر طول رشته: {ctx.get('max_length')}"
-        return result
 
-    if err_type == "list_too_short":
-        result["message"] = f"حداقل آیتم‌های لیست: {ctx.get('min_items')}"
-        return result
+class PermissionDeniedException(AppException):
+    def __init__(self, message: str = "You do not have permission") -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="AUTH_PERMISSION_DENIED",
+        )
 
-    if err_type == "list_too_long":
-        result["message"] = f"حداکثر آیتم‌های لیست: {ctx.get('max_items')}"
-        return result
 
-    if err_type == "string_pattern_mismatch":
-        result["message"] = f"فرمت رشته اشتباه است. الگو: {ctx.get('pattern')}"
-        return result
+class TooManyRequestsException(AppException):
+    def __init__(self, message: str = "Too many requests") -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            code="AUTH_TOO_MANY_REQUESTS",
+        )
 
-    if err_type == "literal_error":
-        result["message"] = f"باید یکی از مقادیر زیر باشد: {ctx.get('expected')}"
-        return result
 
-    if err_type == "greater_than":
-        result["message"] = f"مقدار باید > {ctx.get('gt')} باشد"
-        return result
+# --------- Common Exceptions ---------
 
-    if err_type == "less_than":
-        result["message"] = f"مقدار باید < {ctx.get('lt')} باشد"
-        return result
+class NotFoundException(AppException):
+    def __init__(self, message: str = "Resource not found") -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="COMMON_NOT_FOUND",
+        )
 
-    if err_type == "greater_than_equal":
-        result["message"] = f"مقدار باید ≥ {ctx.get('ge')} باشد"
-        return result
 
-    if err_type == "less_than_equal":
-        result["message"] = f"مقدار باید ≤ {ctx.get('le')} باشد"
-        return result
+class ConflictException(AppException):
+    def __init__(self, message: str = "Resource already exists") -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_409_CONFLICT,
+            code="COMMON_CONFLICT",
+        )
 
-    if err_type == "union":
-        result["message"] = "مقدار با هیچ‌کدام از انواع union سازگار نیست."
-        return result
 
-    return result
+class ValidationException(AppException):
+    def __init__(self, message: str = "Validation error", *, extra=None) -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="COMMON_VALIDATION_ERROR",
+            extra=extra,
+        )

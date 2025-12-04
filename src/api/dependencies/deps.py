@@ -8,6 +8,7 @@ from src.api.v1.user.repository import UserRepository
 from src.api.v1.user import models as user_models
 from jose import JWTError
 from src.core.errors import ErrorMessages
+from src.core.exceptions import InvalidCredentialsException, NotFoundException, PermissionDeniedException
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")  
 
@@ -16,24 +17,15 @@ def get_current_user_data(token: str = Depends(oauth2_scheme), db: Session = Dep
         token_data = Security.decode_access_token(token)
         sub = token_data.get("sub")
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ErrorMessages.INVALID_CREDENTIALS,
-        )
+        raise InvalidCredentialsException(ErrorMessages.INVALID_CREDENTIALS)
 
     repo = UserRepository(db)
     user = repo.get_user_by_id(int(sub))
 
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ErrorMessages.USER_NOT_FOUND,
-        )
+        raise NotFoundException(ErrorMessages.USER_NOT_FOUND)
     
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=ErrorMessages.USER_IS_INACTIVE,
-        )
+        raise PermissionDeniedException(ErrorMessages.USER_IS_INACTIVE)
 
     return user

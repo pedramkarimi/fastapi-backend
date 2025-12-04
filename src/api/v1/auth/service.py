@@ -6,6 +6,7 @@ from .schemas import LoginRequest, TokenResponse
 from src.core.response import BaseResponse
 from src.core.errors import ErrorMessages
 from src.core.security import Security
+from src.core.exceptions import InvalidCredentialsException, PermissionDeniedException
 
 class AuthService:
     def __init__(self, db: Session):
@@ -15,14 +16,14 @@ class AuthService:
     def login(self, credentials: LoginRequest) -> BaseResponse[TokenResponse]:
         user = self.user_repo.get_user_by_email(credentials.email)
         if user is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorMessages.INVALID_CREDENTIALS)
+            raise InvalidCredentialsException(ErrorMessages.INVALID_CREDENTIALS)
         
         password_is_verified = Security.verify_password(credentials.password, user.password)
         if not password_is_verified:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorMessages.INVALID_CREDENTIALS)
+            raise InvalidCredentialsException(ErrorMessages.INVALID_CREDENTIALS)
         
         if not user.is_active:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorMessages.USER_IS_INACTIVE)
+            raise PermissionDeniedException(ErrorMessages.USER_IS_INACTIVE)
         
         access_token = Security.create_access_token(user)
         token = TokenResponse(access_token=access_token)

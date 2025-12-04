@@ -5,6 +5,7 @@ from typing import Any, Optional
 from jose import jwt, JWTError
 from src.core.config import settings
 from src.api.v1.user.models import User as user_model
+from .exceptions import InvalidCredentialsException
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -43,7 +44,4 @@ class Security:
             payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
             return payload
         except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-            )
+            raise InvalidCredentialsException(status.HTTP_401_UNAUTHORIZED)
