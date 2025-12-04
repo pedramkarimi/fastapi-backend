@@ -8,10 +8,14 @@ from .core.handlers import (
     validation_exception_handler,
     generic_exception_handler,
 )
+from src.core.middlewares import logging_middleware
 
 app = FastAPI(debug=True)
 app.include_router(api_v1_router, prefix="/api/v1")
+
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 app.add_exception_handler(AppException, app_exception_handler)
+
+app.middleware("http")(logging_middleware)
