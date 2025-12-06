@@ -1,4 +1,3 @@
-# app/core/middlewares.py
 
 import time
 import logging
@@ -7,13 +6,13 @@ from typing import Callable
 from fastapi import Request, Response
 from fastapi import HTTPException
 
-from .exceptions import AppException
-from .handlers import (
+from src.core.exceptions import AppException
+from src.core.handlers import (
     app_exception_handler,
     http_exception_handler,
     generic_exception_handler,
 )
-from .log_models import RequestLog
+from src.core.log_models import RequestLog
 from sqlalchemy.exc import SQLAlchemyError
 from src.api.dependencies.utils import get_client_ip
 

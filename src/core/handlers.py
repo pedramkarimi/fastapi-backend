@@ -96,9 +96,6 @@ def format_pydantic_error(error: dict) -> dict:
 # ---------- Exception Handlerها ----------
 
 async def app_exception_handler(request: Request, exc: AppException):
-    """
-    هندل‌کردن همه‌ی Exceptionهایی که از AppException ارث برده‌اند.
-    """
     logger.warning(
         "AppException on %s: code=%s message=%s extra=%s",
         request.url.path,
@@ -159,10 +156,6 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """
-    هندل‌کردن خطاهای Validation خود FastAPI/Pydantic
-    و استفاده از formatterی که قبلاً نوشته بودیم.
-    """
     formatted_errors = [format_pydantic_error(err) for err in exc.errors()]
 
     logger.info(
@@ -184,9 +177,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 async def generic_exception_handler(request: Request, exc: Exception):
-    """
-    fallback نهایی برای هر Exception هندل‌نشده.
-    """
     logger.error(
         "Unhandled exception on %s: %r",
         request.url.path,

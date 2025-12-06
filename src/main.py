@@ -8,7 +8,7 @@ from .core.handlers import (
     validation_exception_handler,
     generic_exception_handler,
 )
-from src.core.middlewares import logging_middleware
+from src.core.middlewares import setup_middlewares
 from src.core.redis import init_redis, close_redis
 from contextlib import asynccontextmanager
 
@@ -31,6 +31,6 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 app.add_exception_handler(AppException, app_exception_handler)
 
-app.middleware("http")(logging_middleware)
+setup_middlewares(app)
 
 
