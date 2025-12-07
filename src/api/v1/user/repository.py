@@ -19,7 +19,7 @@ class UserRepository:
     def get_user_by_email(self, email: str) -> Optional[models.User]:
         return self.db.query(models.User).filter(models.User.email == email).first()
 
-    def users_list(self, skip: int, limit: int) -> List[models.User]:
+    async def users_list(self, skip: int, limit: int) -> List[models.User]:
         return  (
             self.db.query(models.User)
             .order_by(models.User.id)
@@ -28,7 +28,7 @@ class UserRepository:
             .all()
         )
     
-    def users_count(self) -> int:
+    async def users_count(self) -> int:
         # return self.db.query(func.count(models.User.id)).scalar()
         stmt = select(func.count(models.User.id))
         return self.db.execute(stmt).scalar_one()

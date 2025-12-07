@@ -5,6 +5,7 @@ class RedisKeys:
     BRUTE_FORCE_EMAIL_LOCK = "security:bruteforce:email:{email}:lock"
     BRUTE_FORCE_IP_LOCK = "security:bruteforce:ip:{ip}:lock"
     RATE_LIMIT_IP_ROUTE = "security:ratelimit:ip:{ip}:{path}"
+    USERS_LIST = "data:users_list:skip={skip}:limit={limit}"
     # RATE_LIMIT_USERID_ROUTE = "security:ratelimit:user:{user_id}:{route}"
     # OTP_PHONE = "auth:otp:phone:{phone}"
     # OTP_EMAIL = "auth:otp:email:{email}"
@@ -31,5 +32,9 @@ class RedisKeys:
     @staticmethod
     def rate_limit_ip(ip: str, path: str) -> str:
         return RedisKeys.RATE_LIMIT_IP_ROUTE.format(ip=ip, path=path)
+    
+    @staticmethod
+    def users_list(skip: int, limit: int) -> str:
+        return RedisKeys.USERS_LIST.format(skip=skip, limit=limit)
 
 
